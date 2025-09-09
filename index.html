@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Weather App</title>
+    <title>Weather App | Mohammed Ibrahim</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -20,6 +20,7 @@
             animation: gradientBG 15s ease infinite;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 20px;
@@ -43,6 +44,7 @@
             overflow: hidden;
             color: white;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
         }
 
         .container:hover {
@@ -219,6 +221,46 @@
             animation: fadeIn 0.8s forwards;
         }
 
+        .location-permission {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(5px);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .location-permission button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .location-permission button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .copyright {
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 15px;
@@ -240,13 +282,20 @@
     </style>
 </head>
 <body>
+    <div class="location-permission" id="location-permission">
+        <i class="fas fa-map-marker-alt" style="font-size: 40px; margin-bottom: 10px;"></i>
+        <h3>Enable Location Access</h3>
+        <p>For accurate local weather information, please allow location access</p>
+        <button id="enable-location"><i class="fas fa-location-arrow"></i> Enable Location</button>
+    </div>
+    
     <div class="container">
         <div class="search-box">
-            <input type="text" placeholder="Enter city name" id="city-input">
+            <input type="text" placeholder="Enter city name" id="city-input" value="Erbil">
             <button id="search-btn"><i class="fas fa-search"></i></button>
         </div>
         
-        <div class="loading">
+        <div class="loading" id="loading">
             <i class="fas fa-spinner"></i>
             <p>Loading weather data...</p>
         </div>
@@ -256,7 +305,7 @@
         </div>
         
         <div class="weather-card" id="weather-card">
-            <h2 class="city-name" id="city-name">New York</h2>
+            <h2 class="city-name" id="city-name">Erbil, Iraq</h2>
             <p class="date" id="date">Monday, June 12, 2023</p>
             
             <div class="weather-icon" id="weather-icon">
@@ -265,28 +314,32 @@
             
             <h3 class="weather-description" id="weather-description">Sunny</h3>
             
-            <h1 class="temperature" id="temperature">24</h1>
+            <h1 class="temperature" id="temperature">30</h1>
             
             <div class="weather-details">
                 <div class="detail">
                     <i class="fas fa-wind"></i>
                     <span class="detail-title">Wind</span>
-                    <span class="detail-value" id="wind-speed">5 km/h</span>
+                    <span class="detail-value" id="wind-speed">7 km/h</span>
                 </div>
                 
                 <div class="detail">
                     <i class="fas fa-tint"></i>
                     <span class="detail-title">Humidity</span>
-                    <span class="detail-value" id="humidity">65%</span>
+                    <span class="detail-value" id="humidity">42%</span>
                 </div>
                 
                 <div class="detail">
                     <i class="fas fa-compress-alt"></i>
                     <span class="detail-title">Pressure</span>
-                    <span class="detail-value" id="pressure">1015 hPa</span>
+                    <span class="detail-value" id="pressure">1012 hPa</span>
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div class="copyright">
+        © 2025 Mohammed Ibrahim. All rights reserved.
     </div>
 
     <script>
@@ -295,8 +348,10 @@
             const cityInput = document.getElementById('city-input');
             const searchBtn = document.getElementById('search-btn');
             const weatherCard = document.getElementById('weather-card');
-            const loading = document.querySelector('.loading');
+            const loading = document.getElementById('loading');
             const errorMessage = document.getElementById('error-message');
+            const locationPermission = document.getElementById('location-permission');
+            const enableLocationBtn = document.getElementById('enable-location');
             
             // Elements to update
             const cityName = document.getElementById('city-name');
@@ -313,8 +368,62 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             dateElement.textContent = now.toLocaleDateString('en-US', options);
             
-            // Fetch weather data on page load for default city
-            fetchWeatherData('New York');
+            // Check if geolocation is supported
+            if ("geolocation" in navigator) {
+                // Show location permission prompt
+                locationPermission.style.display = 'block';
+                
+                // Add event listener for enable location button
+                enableLocationBtn.addEventListener('click', requestLocation);
+            } else {
+                // Geolocation not supported, hide the prompt
+                locationPermission.style.display = 'none';
+                // Fetch weather for Erbil by default
+                fetchWeatherData('Erbil');
+            }
+            
+            function requestLocation() {
+                loading.style.display = 'block';
+                locationPermission.style.display = 'none';
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Success callback
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        // Fetch weather by coordinates
+                        fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=no`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Location not found');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                updateWeatherUI(data);
+                                loading.style.display = 'none';
+                                weatherCard.style.display = 'block';
+                                weatherCard.classList.add('fade-in');
+                            })
+                            .catch(error => {
+                                console.error('Error fetching weather data:', error);
+                                loading.style.display = 'none';
+                                fetchWeatherData('Erbil'); // Fallback to Erbil
+                            });
+                    },
+                    function(error) {
+                        // Error callback
+                        console.error('Error getting location:', error);
+                        loading.style.display = 'none';
+                        locationPermission.style.display = 'block';
+                        fetchWeatherData('Erbil'); // Fallback to Erbil
+                    }
+                );
+            }
+            
+            // Fetch weather data on page load for Erbil
+            fetchWeatherData('Erbil');
             
             // Add event listener for search button
             searchBtn.addEventListener('click', function() {
@@ -339,6 +448,7 @@
                 loading.style.display = 'block';
                 weatherCard.style.display = 'none';
                 errorMessage.style.display = 'none';
+                locationPermission.style.display = 'none';
                 
                 // Fetch data from WeatherAPI
                 fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&aqi=no`)
@@ -379,7 +489,7 @@
             
             function updateWeatherUI(data) {
                 // Update text content
-                cityName.textContent = data.location.name;
+                cityName.textContent = `${data.location.name}, ${data.location.country}`;
                 temperature.textContent = data.current.temp_c;
                 weatherDescription.textContent = data.current.condition.text;
                 windSpeed.textContent = `${data.current.wind_kph} km/h`;
@@ -428,10 +538,6 @@
                 weatherIcon.appendChild(icon);
             }
         });
-         <div class="copyright">
-                <p>&copy; 2025 Mohammed Ibrahim. All rights reserved.</p>
-            </div>
     </script>
-    
 </body>
 </html>
